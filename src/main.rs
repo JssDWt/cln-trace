@@ -55,6 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
 
         let msg = trace_parse(trace_read()?);
+        println!("Got message: {}", msg);
         let v = serde_json::from_str::<Vec<Value>>(&msg)?;
 
         tx.send(v[0].clone()).await?;
