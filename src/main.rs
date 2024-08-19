@@ -53,8 +53,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
+    println!("Starting listen loop");
     loop {
-        let msg = trace_parse(trace_read()?);
+        let line = trace_read()?;
+        println!("Got line: {}", line);
+        let msg = trace_parse(line);
         
         let v = serde_json::from_str::<Vec<Value>>(&msg)?;
 
@@ -63,7 +66,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn trace_parse(line: String) -> String {
-    println!("Got line: {}", line);
     let line = &line[17..];
     let timestamp_end = line.find(":").unwrap();
     let line = &line[(timestamp_end + 1)..];
