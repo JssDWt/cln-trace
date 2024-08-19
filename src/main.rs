@@ -1,6 +1,6 @@
 use std::{fs::canonicalize, time::Duration};
 
-use bcc::{trace_read, BPFBuilder, BccDebug, Kprobe, USDTContext, BPF};
+use bcc::{trace_read, BPFBuilder, BccDebug, Kprobe, USDTContext, Uprobe, BPF};
 use reqwest::Method;
 use serde_json::{value::RawValue, Value};
 
@@ -32,6 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut b = BPFBuilder::new(code)?
         .add_usdt_context(usdt_ctx)?
         .debug(BccDebug::empty())
+        .attach_usdt_ignore_pid(true)?
         .build()?;
 
     let (tx, mut rx) = tokio::sync::mpsc::channel(1024);
@@ -53,9 +54,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     loop {
-
         let msg = trace_parse(trace_read()?);
-        println!("Got message: {}", msg);
+        
         let v = serde_json::from_str::<Vec<Value>>(&msg)?;
 
         tx.send(v[0].clone()).await?;
@@ -63,6 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn trace_parse(line: String) -> String {
+    println!("Got line: {}", line);
     let line = &line[17..];
     let timestamp_end = line.find(":").unwrap();
     let line = &line[(timestamp_end + 1)..];
