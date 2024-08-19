@@ -1,4 +1,5 @@
 #include <linux/types.h>
+#include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 #include <uapi/linux/ptrace.h>
 
