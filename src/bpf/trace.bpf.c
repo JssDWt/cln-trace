@@ -1,4 +1,4 @@
-#include <linux/ptrace.h>
+#include <uapi/linux/ptrace.h>
 
 int do_trace(struct pt_regs *ctx) {
     uint64_t addr;

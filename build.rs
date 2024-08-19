@@ -22,9 +22,7 @@ fn main() {
         .source(SRC)
         .clang_args([
             OsStr::new("-I"),
-            OsStr::new(&format!("/usr/include/{arch}-linux-gnu")),
-            OsStr::new("-I"),
-            OsStr::new(&format!("/usr/src/linux-headers-{arch}/include")),
+            OsStr::new(&format!("/usr/src/linux-headers-6.1.0-23-common/include")),
         ])
         .build_and_generate(&out)
         .unwrap();
