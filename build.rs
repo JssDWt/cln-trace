@@ -25,6 +25,8 @@ fn main() {
             OsStr::new("-I"),
             OsStr::new(&format!("/usr/include/aarch64-linux-gnu")),
             OsStr::new("-I"),
+            OsStr::new(&format!("/usr/src/linux-headers-6.1.0-23-common/arch/arm/include")),
+            OsStr::new("-I"),
             OsStr::new(&format!("/usr/src/linux-headers-6.1.0-23-common/include")),
         ])
         .build_and_generate(&out)
