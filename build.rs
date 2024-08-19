@@ -23,6 +23,8 @@ fn main() {
         .clang_args([
             OsStr::new("-I"),
             OsStr::new(&format!("/usr/src/linux-headers-6.1.0-23-common/include")),
+            OsStr::new("-I"),
+            OsStr::new(&format!("/usr/src/linux-headers-6.1.0-23-common/arch/arm/include")),
         ])
         .build_and_generate(&out)
         .unwrap();
