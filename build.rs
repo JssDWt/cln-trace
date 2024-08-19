@@ -23,6 +23,8 @@ fn main() {
         .clang_args([
             OsStr::new("-I"),
             OsStr::new(&format!("/usr/include/{arch}-linux-gnu")),
+            OsStr::new("-I"),
+            OsStr::new(&format!("/usr/src/linux-headers-{arch}/include")),
         ])
         .build_and_generate(&out)
         .unwrap();
