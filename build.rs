@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::ffi::OsStr;
+use std::path::PathBuf;
 
 use libbpf_cargo::SkeletonBuilder;
 
@@ -21,7 +22,7 @@ fn main() {
         .source(SRC)
         .clang_args([
             OsStr::new("-I"),
-            vmlinux::include_path_root().join(arch).as_os_str(),
+            OsStr::new(&format!("/usr/include/{arch}-linux-gnu")),
         ])
         .build_and_generate(&out)
         .unwrap();
