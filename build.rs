@@ -20,6 +20,7 @@ fn main() {
 
     SkeletonBuilder::new()
         .source(SRC)
+        .clang("clang-18")
         .clang_args([
             OsStr::new("-I"),
             OsStr::new(&format!("/usr/include/aarch64-linux-gnu")),
