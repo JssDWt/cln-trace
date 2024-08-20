@@ -5,7 +5,3 @@ edition = "2021"
 
 [dependencies]
 bcc = "0.0.34"
-reqwest = { version = "0.12.5", features = ["json"] }
-serde = "1.0.208"
-serde_json = { version = "1.0.125", features = ["raw_value"] }
-tokio = { version = "1.39.3", features = ["macros", "rt-multi-thread", "sync", "time"] }

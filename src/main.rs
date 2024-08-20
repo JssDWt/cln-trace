@@ -1,21 +1,18 @@
-use std::{fs::{canonicalize, File}, io::{BufRead, BufReader}, path::Path, time::Duration};
+use std::fs::canonicalize;
+use std::{fs::File, io::BufRead, io::BufReader, path::Path};
 
-use bcc::{trace_read, BPFBuilder, BccDebug, Kprobe, USDTContext, Uprobe, BPF};
-use reqwest::Method;
-use serde_json::{value::RawValue, Value};
+use bcc::{BPFBuilder, BccDebug, USDTContext};
 
 pub const TRACEFS: &'static str = "/sys/kernel/debug/tracing";
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 3 {
-        println!("Usage: {} [output_path] [binary]", args[0]);
+    if args.len() != 2 {
+        println!("Usage: {} [binary]", args[0]);
         std::process::exit(1);
     }
 
-    let zipkin_url = args[1].clone();
-    let binary = args[2].clone();  
+    let binary = args[1].clone();
 
     let code = r#"
     #include <uapi/linux/ptrace.h>
@@ -25,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         char path[495];
         bpf_usdt_readarg(2, ctx, &addr);
         bpf_probe_read(&path, sizeof(path), (void *)addr);
-        bpf_trace_printk("%s\\n", path);
+        bpf_trace_printk("%s", path);
         return 0;
     };"#;
 
@@ -37,25 +34,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach_usdt_ignore_pid(true)?
         .build()?;
 
-    let (tx, mut rx) = tokio::sync::mpsc::channel(1024);
-
-    tokio::spawn(async move {
-        loop {
-            tokio::time::sleep(Duration::from_secs(1)).await;
-            let mut spans: Vec<Value> = Vec::new();
-            while let Ok(span) = rx.try_recv() {
-                spans.push(span);
-            }
-
-            println!("Submitting a batch of {} spans", spans.len());
-            match reqwest::Client::new().post(zipkin_url.clone()).json(&spans).send().await {
-                Ok(_) => {},
-                Err(e) => println!("Error submitting spans to otelcol: {:?}", e)
-            }
-        }
-    });
-
-
     let p = format!("{}/trace_pipe", TRACEFS);
     let path = Path::new(&p);
     let f = File::open(path).unwrap();
@@ -65,15 +43,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let mut buf = String::with_capacity(1024);
         reader.read_line(&mut buf)?;
+        println!("Got line: {}", buf);
         if buf.starts_with("CPU:") {
             continue;
         }
-        println!("got line: {}", buf);
         let msg = trace_parse(buf);
-        
-        let v = serde_json::from_str::<Vec<Value>>(&msg)?;
-
-        tx.send(v[0].clone()).await?;
+        println!("Message: {}", msg)
     }
 }
 
