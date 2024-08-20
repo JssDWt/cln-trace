@@ -1,8 +1,10 @@
-use std::{fs::canonicalize, time::Duration};
+use std::{fs::{canonicalize, File}, io::{BufRead, BufReader}, path::Path, time::Duration};
 
 use bcc::{trace_read, BPFBuilder, BccDebug, Kprobe, USDTContext, Uprobe, BPF};
 use reqwest::Method;
 use serde_json::{value::RawValue, Value};
+
+pub const TRACEFS: &'static str = "/sys/kernel/debug/tracing";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -53,11 +55,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
+
+    let p = format!("{}/trace_pipe", TRACEFS);
+    let path = Path::new(&p);
+    let f = File::open(path).unwrap();
+    let mut reader = BufReader::new(f);
+
     println!("Starting listen loop");
     loop {
-        let line = trace_read()?;
-        println!("Got line: {}", line);
-        let msg = trace_parse(line);
+        let mut buf = String::with_capacity(1024);
+        reader.read_line(&mut buf)?;
+        if buf.starts_with("CPU:") {
+            continue;
+        }
+        let msg = trace_parse(buf);
         
         let v = serde_json::from_str::<Vec<Value>>(&msg)?;
 
