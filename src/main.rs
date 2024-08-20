@@ -68,6 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if buf.starts_with("CPU:") {
             continue;
         }
+        println!("got line: {}", buf);
         let msg = trace_parse(buf);
         
         let v = serde_json::from_str::<Vec<Value>>(&msg)?;
