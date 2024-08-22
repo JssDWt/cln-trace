@@ -43,12 +43,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let mut buf = String::with_capacity(1024);
         reader.read_line(&mut buf)?;
-        println!("Got line: {}", buf);
         if buf.starts_with("CPU:") {
             continue;
         }
         let msg = trace_parse(buf);
-        println!("Message: {}", msg)
+        println!("{}", msg)
     }
 }
 
