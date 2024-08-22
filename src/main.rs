@@ -3,7 +3,7 @@ use std::{fs::File, io::BufRead, io::BufReader, path::Path};
 
 use bcc::{BPFBuilder, BccDebug, USDTContext};
 
-pub const TRACEFS: &'static str = "/sys/kernel/debug/tracing";
+pub const TRACEFS: &str = "/sys/kernel/debug/tracing";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut usdt_ctx = USDTContext::from_binary_path(canonicalize(binary)?)?;
     usdt_ctx.enable_probe("span_emit", "do_trace")?;
-    let mut b = BPFBuilder::new(code)?
+    let _b = BPFBuilder::new(code)?
         .add_usdt_context(usdt_ctx)?
         .debug(BccDebug::empty())
         .attach_usdt_ignore_pid(true)?
@@ -53,9 +53,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn trace_parse(line: String) -> String {
     let line = &line[17..];
-    let timestamp_end = line.find(":").unwrap();
+    let timestamp_end = line.find(':').unwrap();
     let line = &line[(timestamp_end + 1)..];
-    let sym_end = line.find(":").unwrap();
+    let sym_end = line.find(':').unwrap();
     let msg = &line[sym_end + 2..];
 
     msg.to_owned()
