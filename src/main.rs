@@ -1,19 +1,17 @@
 use std::{fs::canonicalize, time::Duration};
 
-use bcc::{trace_read, BPFBuilder, BccDebug, Kprobe, USDTContext, Uprobe, BPF};
-use reqwest::Method;
-use serde_json::{value::RawValue, Value};
+use bcc::{trace_read, BPFBuilder, BccDebug, USDTContext};
+use serde_json::Value;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 3 {
-        println!("Usage: {} [output_path] [binary]", args[0]);
+        println!("Usage: {} [binary]", args[0]);
         std::process::exit(1);
     }
 
-    let zipkin_url = args[1].clone();
-    let binary = args[2].clone();  
+    let binary = args[1].clone();  
 
     let code = r#"
     #include <uapi/linux/ptrace.h>
@@ -29,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut usdt_ctx = USDTContext::from_binary_path(canonicalize(binary)?)?;
     usdt_ctx.enable_probe("span_emit", "do_trace")?;
-    let mut b = BPFBuilder::new(code)?
+    let _b = BPFBuilder::new(code)?
         .add_usdt_context(usdt_ctx)?
         .debug(BccDebug::empty())
         .attach_usdt_ignore_pid(true)?
@@ -45,18 +43,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 spans.push(span);
             }
 
-            println!("Submitting a batch of {} spans", spans.len());
-            match reqwest::Client::new().post(zipkin_url.clone()).json(&spans).send().await {
-                Ok(_) => {},
-                Err(e) => println!("Error submitting spans to otelcol: {:?}", e)
-            }
+            let json = match serde_json::to_string(&spans) {
+                Ok(json) => json,
+                Err(e) => {
+                    println!("Failed to serialize spans: {:?}", e);
+                    continue;
+                },
+            };
+            println!("{}", json);
         }
     });
 
-    println!("Starting listen loop");
     loop {
         let line = trace_read()?;
-        println!("Got line: {}", line);
         let msg = trace_parse(line);
         
         let v = serde_json::from_str::<Vec<Value>>(&msg)?;
