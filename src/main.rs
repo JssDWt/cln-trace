@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         char path[495];
         bpf_usdt_readarg(2, ctx, &addr);
         bpf_probe_read(&path, sizeof(path), (void *)addr);
-        bpf_trace_printk("%s\\n", path);
+        bpf_trace_printk("%s\n", path);
         return 0;
     };"#;
 
